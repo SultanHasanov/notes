@@ -120,8 +120,8 @@ export const CardDetails: React.FC = () => {
   return (
     <div style={{ padding: "16px" }}>
       <div className="header-card">
-        <Button fill="none" onClick={() => navigate(-1)}>
-          {" "}
+        <Button color="primary" fill="none" onClick={() => navigate(-1)}>
+          
           <ArrowLeftOutlined /> Назад
         </Button>
         <Popconfirm
