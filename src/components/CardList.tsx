@@ -1,6 +1,6 @@
 // src/components/CardList.tsx
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Modal, Input, Row, Col, Progress } from 'antd';
+import { Button, Card, Modal, Input, Row, Col, Progress, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import "../App.css";
@@ -16,6 +16,21 @@ interface Note {
   text: string;
   completed: boolean;
 }
+
+
+
+
+const getProgressColor = (percent: number) => {
+    if (percent === 100) {
+      return '#87d068'; // зеленый цвет для 100%
+    } else {
+        return {
+            '0%': '#108ee9',  // синий для 0%
+            '100%': '#87d068', // зеленый для 100%
+          };
+    }
+  };
+
 
 export const CardList: React.FC = () => {
   const [cards, setCards] = useState<CardItem[]>([]);
@@ -35,6 +50,7 @@ export const CardList: React.FC = () => {
     setCards([...cards, response.data]);
     setNewCardTitle('');
     setIsModalVisible(false);
+    message.success("Карточка добавлена");
   };
 
   useEffect(() => {
@@ -81,6 +97,7 @@ export const CardList: React.FC = () => {
               style={{ textAlign: 'center' }}
             >
               <Progress
+               strokeColor={getProgressColor(calculateProgress(card.notes))} 
                 type="circle"
                 percent={calculateProgress(card.notes)}
                 size={40}

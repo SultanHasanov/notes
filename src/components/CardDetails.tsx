@@ -1,7 +1,5 @@
-// src/components/CardDetails.tsx
 import React, { useEffect, useState } from "react";
-import { Input, List, Checkbox, Space, Toast, Button } from "antd-mobile";
-
+import { List, Checkbox, Space, Toast, Button } from "antd-mobile";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -10,7 +8,7 @@ import {
   DeleteOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
-import { Popconfirm } from "antd";
+import { Popconfirm, Modal, Input, message  } from "antd";
 
 interface Note {
   id: string;
@@ -25,6 +23,9 @@ export const CardDetails: React.FC = () => {
   const [newNoteText, setNewNoteText] = useState("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
+  const [isModalVisible, setIsModalVisible] = useState(false); // состояние для показа модалки
+  
+
 
   const handleDeleteCard = async (id: number) => {
     await axios.delete(`https://b25a776acd1c337f.mokky.dev/items/${id}`);
@@ -39,22 +40,24 @@ export const CardDetails: React.FC = () => {
   };
 
   const addNote = async () => {
-    if (!newNoteText.trim()) {
-      Toast.show("Введите текст заметки!");
-      return;
-    }
-    const newNote = {
-      id: Date.now().toString(),
-      text: newNoteText,
-      completed: false,
-    };
-    const updatedCard = { ...card, notes: [...card.notes, newNote] };
-    await axios.patch(
-      `https://b25a776acd1c337f.mokky.dev/items/${id}`,
-      updatedCard
-    );
-    setCard(updatedCard);
-    setNewNoteText("");
+      if (!newNoteText.trim()) {
+          Toast.show("Введите текст заметки!");
+          return;
+        }
+        const newNote = {
+            id: Date.now().toString(),
+            text: newNoteText,
+            completed: false,
+        };
+        const updatedCard = { ...card, notes: [...card.notes, newNote] };
+        await axios.patch(
+            `https://b25a776acd1c337f.mokky.dev/items/${id}`,
+            updatedCard
+        );
+        setCard(updatedCard);
+        setNewNoteText("");
+        message.success("Заметка добавлена");
+
   };
 
   const toggleNoteCompletion = async (noteId: string) => {
@@ -79,9 +82,14 @@ export const CardDetails: React.FC = () => {
     setCard(updatedCard);
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingText(e.target.value); // Устанавливаем текст, извлекая значение из события
+  };
+
   const editNote = (note: Note) => {
     setEditingNoteId(note.id);
     setEditingText(note.text);
+    setIsModalVisible(true); // открываем модалку
   };
 
   const saveEditedNote = async () => {
@@ -89,13 +97,20 @@ export const CardDetails: React.FC = () => {
       note.id === editingNoteId ? { ...note, text: editingText } : note
     );
     const updatedCard = { ...card, notes: updatedNotes };
-    await axios.patch(
-      `https://b25a776acd1c337f.mokky.dev/items/${id}`,
-      updatedCard
-    );
-    setCard(updatedCard);
-    setEditingNoteId(null);
-    setEditingText("");
+
+    try {
+      const response = await axios.patch(
+        `https://b25a776acd1c337f.mokky.dev/items/${id}`,
+        updatedCard
+      );
+      setCard(response.data); // обновляем карточку с новыми данными с сервера
+      setIsModalVisible(false); // закрываем модалку
+      setEditingNoteId(null); // сбрасываем редактируемую заметку
+      setEditingText(""); // очищаем текст
+    } catch (error) {
+      console.error("Ошибка при сохранении заметки:", error);
+      Toast.show("Не удалось сохранить заметку!");
+    }
   };
 
   useEffect(() => {
@@ -126,9 +141,10 @@ export const CardDetails: React.FC = () => {
         <Input
           placeholder="Введите текст заметки"
           value={newNoteText}
-          onChange={(val) => setNewNoteText(val)}
+          onChange={(e) => setNewNoteText(e.target.value)} // Изменено с 'val' на 'e' и извлечен текст
           style={{ flexGrow: 1 }}
         />
+
         <PlusCircleOutlined
           onClick={addNote}
           style={{ fontSize: "28px", color: "#1677ff" }}
@@ -153,15 +169,9 @@ export const CardDetails: React.FC = () => {
                   onChange={() => toggleNoteCompletion(note.id)}
                   style={{ marginRight: "8px" }}
                 />
-                {editingNoteId === note.id ? (
-                  <Input
-                    value={editingText}
-                    onChange={(val) => setEditingText(val)}
-                    style={{ flexGrow: 1 }}
-                  />
-                ) : (
-                  <span>{note.text}</span>
-                )}
+                <span>{note.text.length > 20
+                    ? note.text.slice(0, 20) + "..."
+                    : note.text}</span>
               </Space>
 
               {/* Правая часть: Иконки */}
@@ -188,6 +198,22 @@ export const CardDetails: React.FC = () => {
           </List.Item>
         ))}
       </List>
+
+      {/* Модальное окно для редактирования */}
+      <Modal
+        title="Редактировать заметку"
+        visible={isModalVisible}
+        onCancel={() => setIsModalVisible(false)} // Закрытие модалки
+        onOk={saveEditedNote} // Сохранение изменений
+        okText="Сохранить"
+        cancelText="Отмена"
+      >
+        <Input
+          value={editingText}
+          onChange={handleChange} // Привязка к обработчику
+          placeholder="Введите текст заметки"
+        />
+      </Modal>
     </div>
   );
 };
