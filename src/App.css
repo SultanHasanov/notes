@@ -1,0 +1,13 @@
+.ant-card-head {
+  min-height: 35px !important;
+  padding: 0 !important;
+}
+
+.adm-list-item-content-main{
+  padding: 5px 0 !important;
+}
+
+.header-card{
+  display: flex;
+  justify-content: space-between;
+}
